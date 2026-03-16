@@ -6,3 +6,4 @@ openpyxl
 Pillow
 python-docx
 reportlab
+gunicorn
