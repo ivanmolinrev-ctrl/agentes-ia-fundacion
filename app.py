@@ -6,81 +6,88 @@ app = Flask(__name__)
 def home():
 
     respuesta = ""
+    agente_actual = ""
 
     if request.method == "POST":
 
-        agente = request.form["agente"]
+        agente_actual = request.form["agente"]
         consulta = request.form["consulta"]
 
-        if agente == "legal":
-
-            respuesta = f"""
-            <h3>Respuesta Jurídica Generada</h3>
-
-            Consulta:
-            {consulta}
-
-            Concepto:
-
-            En atención a su solicitud, se procede a emitir respuesta
-            institucional indicando que la entidad ha actuado conforme
-            a la normatividad vigente y principios de la función pública.
-
-            Se recomienda adjuntar soportes documentales y
-            mantener comunicación con la entidad requirente.
-            """
-
-        if agente == "proyectos":
-
-            respuesta = f"""
-            <h3>Proyecto Generado</h3>
-
-            Idea:
-            {consulta}
-
-            Objetivo:
-            Desarrollar un proyecto social sostenible.
-
-            Beneficiarios:
-            Población vulnerable.
-
-            Presupuesto:
-            $600.000.000
-
-            Duración:
-            7 meses
-            """
+        respuesta = f"""
+        <h3>Resultado del agente: {agente_actual}</h3>
+        <p>Consulta realizada:</p>
+        <div style='background:#f1f2f6;padding:15px;border-radius:8px'>
+        {consulta}
+        </div>
+        <br>
+        <p>⚠️ Aquí luego aparecerá la respuesta generada por IA.</p>
+        """
 
     return f"""
     <html>
-    <body style="font-family:Arial">
+    <head>
+    <title>Sistema IA FUNCREDES</title>
+    </head>
 
-    <h1>Sistema Empresarial de Agentes IA</h1>
+    <body style="margin:0;font-family:Arial">
 
-    <form method="post">
+    <div style="background:#0a3d62;color:white;padding:15px">
+    <h2>Sistema Empresarial Multi-Agente IA</h2>
+    </div>
 
-    Seleccione Agente:<br><br>
+    <div style="display:flex">
 
-    <select name="agente">
-    <option value="proyectos">Agente Formulador</option>
-    <option value="legal">Agente Legal</option>
-    </select>
+        <div style="width:260px;background:#dfe6e9;padding:20px;height:100vh">
 
-    <br><br>
+        <h3>Agentes</h3>
 
-    Escriba la consulta:<br><br>
+        <p>🤖 Formulador Proyectos</p>
+        <p>💰 Presupuestos</p>
+        <p>📑 Licitaciones</p>
+        <p>⚖️ Agente Legal</p>
+        <p>📊 Evaluación Financiera</p>
+        <p>📋 Diagnóstico</p>
 
-    <textarea name="consulta" style="width:400px;height:120px"></textarea>
+        </div>
 
-    <br><br>
+        <div style="flex:1;padding:40px">
 
-    <button>Generar</button>
+        <h1>Panel de Consulta</h1>
 
-    </form>
+        <form method="post">
 
-    <br><br>
+        Seleccione agente:<br><br>
 
-    {respuesta}
+        <select name="agente" style="width:300px;height:35px">
+        <option>Formulador Proyectos</option>
+        <option>Presupuestos</option>
+        <option>Licitaciones</option>
+        <option>Agente Legal</option>
+        <option>Evaluación Financiera</option>
+        <option>Diagnóstico</option>
+        </select>
+
+        <br><br>
+
+        Escriba la consulta:<br><br>
+
+        <textarea name="consulta" style="width:500px;height:150px"></textarea>
+
+        <br><br>
+
+        <button style="padding:12px 25px;background:#0a3d62;color:white;border:0;border-radius:5px">
+        Ejecutar Agente
+        </button>
+
+        </form>
+
+        <br><br>
+
+        {respuesta}
+
+        </div>
+
+    </div>
 
     </body>
     </html>
