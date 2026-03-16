@@ -116,16 +116,44 @@ color:black;
 
 # ================= CHAT EXTREMO =================
 
+import PyPDF2
+import pandas as pd
+
 @app.route("/chat/<agente>", methods=["GET","POST"])
 def chat(agente):
 
     respuesta=""
+    texto_archivo=""
 
     if request.method=="POST":
 
         consulta=request.form["consulta"]
 
-        prompt = roles[agente] + f"\nConsulta:{consulta}"
+        archivos = request.files.getlist("files")
+
+        for archivo in archivos:
+
+            if archivo.filename.endswith(".pdf"):
+
+                lector = PyPDF2.PdfReader(archivo)
+                for pagina in lector.pages:
+                    texto_archivo += pagina.extract_text()
+
+            elif archivo.filename.endswith(".xlsx"):
+
+                df = pd.read_excel(archivo)
+                texto_archivo += df.to_string()
+
+        prompt = roles[agente] + f"""
+
+Consulta:
+{consulta}
+
+Contenido del documento:
+{texto_archivo}
+
+Analiza profesionalmente el documento.
+"""
 
         completion = client.chat.completions.create(
             model="gpt-4.1-mini",
@@ -136,7 +164,7 @@ def chat(agente):
 
         historial.append((consulta,respuesta))
 
-    return render_template_string("""
+    return render_template_string(TU_HTML_DE_CHAT, historial=historial, agente=agente.upper())
 
 <html>
 <head>
