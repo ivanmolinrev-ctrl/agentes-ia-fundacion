@@ -19,5 +19,9 @@ def home()
     form
     h3{respuesta}h3
     
+app = Flask(__name__)
 
+@app.route("/")
+def home():
+    return "Sistema de Agentes IA funcionando 🚀"
 app.run()
