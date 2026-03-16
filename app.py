@@ -17,17 +17,104 @@ roles = {
 
 historial = []
 
+# ================= DASHBOARD BONITO =================
+
 @app.route("/")
 def panel():
-    return """
-    <h1 style='font-family:Arial'>Plataforma IA FUNCREDES</h1>
-    <a href='/chat/formulador'>Formulador</a><br>
-    <a href='/chat/presupuestos'>Presupuestos</a><br>
-    <a href='/chat/licitaciones'>Licitaciones</a><br>
-    <a href='/chat/legal'>Legal</a><br>
-    <a href='/chat/financiero'>Financiero</a><br>
-    <a href='/chat/diagnostico'>Diagnóstico</a>
-    """
+    return render_template_string("""
+
+<html>
+<head>
+<title>Agentes de IA FUNCREDES </title>
+
+<style>
+
+body{
+margin:0;
+font-family:Arial;
+background:#f1f4f9;
+}
+
+.sidebar{
+position:fixed;
+width:240px;
+height:100%;
+background:#0b2545;
+color:white;
+padding:20px;
+}
+
+.logo{
+font-size:22px;
+font-weight:bold;
+margin-bottom:30px;
+}
+
+.content{
+margin-left:260px;
+padding:40px;
+}
+
+.cards{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+gap:25px;
+}
+
+.card{
+background:white;
+padding:35px;
+border-radius:15px;
+box-shadow:0 6px 18px rgba(0,0,0,0.1);
+font-size:18px;
+font-weight:bold;
+cursor:pointer;
+transition:0.3s;
+text-align:center;
+}
+
+.card:hover{
+transform:translateY(-5px);
+}
+
+a{
+text-decoration:none;
+color:black;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="sidebar">
+<div class="logo">FUNCREDES IA</div>
+</div>
+
+<div class="content">
+
+<h1>Panel de Agentes Inteligentes</h1>
+
+<div class="cards">
+
+<a href="/chat/formulador"><div class="card">🤖 Formular Proyecto</div></a>
+<a href="/chat/presupuestos"><div class="card">💰 Presupuesto Obra</div></a>
+<a href="/chat/licitaciones"><div class="card">📑 Analizar Licitación</div></a>
+<a href="/chat/legal"><div class="card">⚖️ Consulta Legal</div></a>
+<a href="/chat/financiero"><div class="card">📊 Evaluación Financiera</div></a>
+<a href="/chat/diagnostico"><div class="card">📋 Diagnóstico</div></a>
+
+</div>
+
+</div>
+
+</body>
+</html>
+
+""")
+
+# ================= CHAT EXTREMO =================
 
 @app.route("/chat/<agente>", methods=["GET","POST"])
 def chat(agente):
@@ -72,7 +159,7 @@ font-weight:bold;
 
 .layout{
 display:flex;
-height:90vh;
+height:88vh;
 }
 
 .chat{
@@ -106,13 +193,13 @@ margin:10px;
 .input{
 position:fixed;
 bottom:0;
-width:75%;
+width:100%;
 background:#020617;
 padding:15px;
 }
 
 textarea{
-width:70%;
+width:60%;
 height:60px;
 border-radius:8px;
 }
@@ -155,7 +242,8 @@ reader.readAsDataURL(files[i])
 <body>
 
 <div class="top">
-FUNCREDES IA — Agente {{agente}}
+Agente {{agente}}
+<a href="/" style="color:white;margin-left:20px">⬅ Panel</a>
 </div>
 
 <div class="layout">
@@ -172,7 +260,7 @@ FUNCREDES IA — Agente {{agente}}
 <div class="historial">
 <h3>Historial</h3>
 {% for c,r in historial %}
-<p>Consulta</p>
+<p>Consulta enviada</p>
 {% endfor %}
 </div>
 
