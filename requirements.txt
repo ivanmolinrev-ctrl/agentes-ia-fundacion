@@ -1,7 +1,5 @@
 flask
 gunicorn
-crewai
 openai
 pandas
 python-docx
-selenium
