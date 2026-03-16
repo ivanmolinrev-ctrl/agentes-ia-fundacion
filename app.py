@@ -8,67 +8,79 @@ def home():
     respuesta = ""
 
     if request.method == "POST":
-        idea = request.form["idea"]
 
-        respuesta = f"""
-        <h3>Proyecto generado</h3>
-        Idea: {idea} <br><br>
+        agente = request.form["agente"]
+        consulta = request.form["consulta"]
 
-        Objetivo:
-        Desarrollar un proyecto social basado en la idea propuesta.
+        if agente == "legal":
 
-        Beneficiarios:
-        Comunidad vulnerable.
+            respuesta = f"""
+            <h3>Respuesta Jurídica Generada</h3>
 
-        Presupuesto:
-        $800.000.000
+            Consulta:
+            {consulta}
 
-        Duración:
-        8 meses
-        """
+            Concepto:
+
+            En atención a su solicitud, se procede a emitir respuesta
+            institucional indicando que la entidad ha actuado conforme
+            a la normatividad vigente y principios de la función pública.
+
+            Se recomienda adjuntar soportes documentales y
+            mantener comunicación con la entidad requirente.
+            """
+
+        if agente == "proyectos":
+
+            respuesta = f"""
+            <h3>Proyecto Generado</h3>
+
+            Idea:
+            {consulta}
+
+            Objetivo:
+            Desarrollar un proyecto social sostenible.
+
+            Beneficiarios:
+            Población vulnerable.
+
+            Presupuesto:
+            $600.000.000
+
+            Duración:
+            7 meses
+            """
 
     return f"""
     <html>
-    <head>
-    <title>Sistema IA Fundación</title>
-    </head>
+    <body style="font-family:Arial">
 
-    <body style="font-family: Arial; margin:0">
+    <h1>Sistema Empresarial de Agentes IA</h1>
 
-    <div style="background:#0a3d62;color:white;padding:15px">
-    <h2>Sistema Empresarial de Agentes IA</h2>
-    </div>
+    <form method="post">
 
-    <div style="display:flex">
+    Seleccione Agente:<br><br>
 
-        <div style="width:250px;background:#dfe6e9;padding:20px;height:100vh">
-        <h3>Menú</h3>
-        <p>Formulador</p>
-        <p>Presupuestos</p>
-        <p>Licitaciones</p>
-        <p>Diagnóstico</p>
-        </div>
+    <select name="agente">
+    <option value="proyectos">Agente Formulador</option>
+    <option value="legal">Agente Legal</option>
+    </select>
 
-        <div style="flex:1;padding:40px">
+    <br><br>
 
-        <h1>Agente IA Formulador</h1>
+    Escriba la consulta:<br><br>
 
-        <form method="post">
-        Idea del proyecto:<br><br>
-        <input name="idea" style="width:400px;height:35px">
-        <br><br>
-        <button style="padding:10px 20px;background:#0a3d62;color:white;border:0">
-        Generar Proyecto
-        </button>
-        </form>
+    <textarea name="consulta" style="width:400px;height:120px"></textarea>
 
-        <br><br>
+    <br><br>
 
-        {respuesta}
+    <button>Generar</button>
 
-        </div>
+    </form>
 
-    </div>
+    <br><br>
+
+    {respuesta}
 
     </body>
     </html>
