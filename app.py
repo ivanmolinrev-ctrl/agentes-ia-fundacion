@@ -7,12 +7,38 @@ app = Flask(__name__)
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 roles = {
-"formulador":"Eres experto en formulación de proyectos.",
-"presupuestos":"Eres ingeniero experto en presupuestos.",
-"licitaciones":"Eres experto en contratación estatal.",
-"legal":"Eres abogado administrativo.",
-"financiero":"Eres experto financiero.",
-"diagnostico":"Eres consultor organizacional."
+
+"formulador":
+"""
+Eres experto en formulación de proyectos en Colombia.
+Especialista MGA, PMI, estudios técnicos, sociales y financieros.
+""",
+
+"presupuestos":
+"""
+Eres ingeniero civil experto en APU, AIU, cronogramas y costos reales.
+""",
+
+"licitaciones":
+"""
+Eres experto en contratación estatal colombiana y SECOP.
+""",
+
+"legal":
+"""
+Eres abogado experto en derecho administrativo colombiano.
+Redactas derechos de petición, tutelas y respuestas institucionales.
+""",
+
+"financiero":
+"""
+Eres experto en VAN, TIR, flujo de caja y evaluación de proyectos.
+""",
+
+"diagnostico":
+"""
+Eres consultor en fortalecimiento organizacional e institucional.
+"""
 }
 
 # ================= DASHBOARD =================
@@ -23,7 +49,7 @@ def panel():
 
 <html>
 <head>
-<title>Plataforma IA FUNCREDES</title>
+<title>Multi Agente IA Funcredes</title>
 
 <style>
 
