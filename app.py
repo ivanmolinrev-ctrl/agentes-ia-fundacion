@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, render_template_string
 import os
 from openai import OpenAI
 
@@ -10,63 +10,82 @@ client = OpenAI(
 
 roles = {
 
-"Formulador":
+"formulador":
 """
-Eres un experto en formulación de proyectos públicos y privados en Colombia.
-Especialista en MGA, PMI, estudios técnicos, financieros y sociales.
-Redactas proyectos completos con estructura profesional.
+Eres experto en formulación de proyectos en Colombia.
+Especialista MGA, PMI, estudios técnicos, sociales y financieros.
 """,
 
-"Presupuestos":
+"presupuestos":
 """
-Eres ingeniero civil experto en presupuestos de obra.
-Realizas APU, AIU, cronogramas, análisis de costos y control financiero.
-Utilizas criterios reales del mercado colombiano.
+Eres ingeniero civil experto en APU, AIU, cronogramas y costos reales.
 """,
 
-"Licitaciones":
+"licitaciones":
 """
-Eres experto en contratación estatal colombiana.
-Analizas pliegos, requisitos habilitantes, factores de evaluación y estrategias.
+Eres experto en contratación estatal colombiana y SECOP.
 """,
 
-"Legal":
+"legal":
 """
 Eres abogado experto en derecho administrativo colombiano.
-Redactas derechos de petición, respuestas a entidades, recursos y conceptos jurídicos.
+Redactas derechos de petición, tutelas y respuestas institucionales.
 """,
 
-"Financiero":
+"financiero":
 """
-Eres experto en evaluación financiera de proyectos.
-Realizas VAN, TIR, flujo de caja, análisis de riesgo y sostenibilidad.
+Eres experto en VAN, TIR, flujo de caja y evaluación de proyectos.
 """,
 
-"Diagnostico":
+"diagnostico":
 """
-Eres consultor organizacional experto en fortalecimiento institucional.
-Analizas procesos, talento humano, estructura y sostenibilidad.
+Eres consultor en fortalecimiento organizacional e institucional.
 """
 }
 
-@app.route("/", methods=["GET","POST"])
-def home():
+# ================= PANEL PRINCIPAL =================
+
+@app.route("/")
+def panel():
+
+    return """
+    <h1>Dashboard Multi-Agente IA</h1>
+
+    <a href='/agente/formulador'><button>🤖 Formulador</button></a>
+    <a href='/agente/presupuestos'><button>💰 Presupuestos</button></a>
+    <a href='/agente/licitaciones'><button>📑 Licitaciones</button></a>
+    <a href='/agente/legal'><button>⚖️ Legal</button></a>
+    <a href='/agente/financiero'><button>📊 Financiero</button></a>
+    <a href='/agente/diagnostico'><button>📋 Diagnóstico</button></a>
+    """
+
+# ================= PANTALLA DE CADA AGENTE =================
+
+@app.route("/agente/<tipo>", methods=["GET","POST"])
+def agente(tipo):
 
     respuesta = ""
-    agente = ""
-    consulta = ""
 
     if request.method == "POST":
 
-        agente = request.form["agente"]
         consulta = request.form["consulta"]
 
-        prompt = roles[agente] + f"""
+        archivo = request.files.get("archivo")
 
-Consulta del usuario:
+        texto_archivo = ""
+
+        if archivo:
+            texto_archivo = f"El usuario adjuntó archivo llamado {archivo.filename}"
+
+        prompt = roles[tipo] + f"""
+
+Consulta:
 {consulta}
 
-Responde de forma técnica, clara, estructurada y profesional.
+Información archivo:
+{texto_archivo}
+
+Responder profesionalmente.
 """
 
         completion = client.chat.completions.create(
@@ -76,61 +95,29 @@ Responde de forma técnica, clara, estructurada y profesional.
 
         respuesta = completion.choices[0].message.content
 
-    return f"""
-<html>
-<head>
-<title>Sistema IA FUNCREDES</title>
-</head>
+    return render_template_string(f"""
 
-<body style="margin:0;font-family:Arial;background:#f5f6fa">
+    <h2>Agente {tipo.upper()}</h2>
 
-<div style="background:#0a3d62;color:white;padding:20px">
-<h2>Dashboard Empresarial Multi-Agente IA</h2>
-</div>
+    <form method="post" enctype="multipart/form-data">
 
-<div style="display:flex">
+    <textarea name="consulta" style="width:400px;height:120px"></textarea><br><br>
 
-<div style="width:260px;background:white;padding:20px;height:100vh;box-shadow:2px 0 5px rgba(0,0,0,0.1)">
+    Adjuntar archivo:<br>
+    <input type="file" name="archivo"><br><br>
 
-<h3>Agentes IA</h3>
+    <button>Enviar a IA</button>
 
-<form method="post">
+    </form>
 
-<button name="agente" value="Formulador" style="width:100%;padding:15px;margin-bottom:10px;background:#27ae60;color:white;border:0;border-radius:8px;font-size:16px">🤖 Formulador Proyectos</button>
+    <hr>
 
-<button name="agente" value="Presupuestos" style="width:100%;padding:15px;margin-bottom:10px;background:#e67e22;color:white;border:0;border-radius:8px;font-size:16px">💰 Presupuestos</button>
+    <div>{respuesta}</div>
 
-<button name="agente" value="Licitaciones" style="width:100%;padding:15px;margin-bottom:10px;background:#2980b9;color:white;border:0;border-radius:8px;font-size:16px">📑 Licitaciones</button>
+    <br><br>
+    <a href="/">Volver al panel</a>
 
-<button name="agente" value="Legal" style="width:100%;padding:15px;margin-bottom:10px;background:#8e44ad;color:white;border:0;border-radius:8px;font-size:16px">⚖️ Agente Legal</button>
-
-<button name="agente" value="Financiero" style="width:100%;padding:15px;margin-bottom:10px;background:#c0392b;color:white;border:0;border-radius:8px;font-size:16px">📊 Evaluación Financiera</button>
-
-<button name="agente" value="Diagnostico" style="width:100%;padding:15px;margin-bottom:10px;background:#16a085;color:white;border:0;border-radius:8px;font-size:16px">📋 Diagnóstico</button>
-
-<br><br>
-
-<textarea name="consulta" placeholder="Escribe tu consulta..." style="width:100%;height:120px;border-radius:8px;padding:10px"></textarea>
-
-</form>
-
-</div>
-
-<div style="flex:1;padding:40px">
-
-<h1>Resultado del Agente</h1>
-
-<div style="background:white;padding:30px;border-radius:10px;box-shadow:0 0 10px rgba(0,0,0,0.1)">
-{respuesta}
-</div>
-
-</div>
-
-</div>
-
-</body>
-</html>
-"""
+    """)
 
 if __name__ == "__main__":
     app.run()
