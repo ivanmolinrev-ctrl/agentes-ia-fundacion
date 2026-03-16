@@ -1,92 +1,77 @@
 from flask import Flask, request
+import os
+from openai import OpenAI
 
 app = Flask(__name__)
+
+client = OpenAI(
+    api_key = os.environ.get("OPENAI_API_KEY")
+)
 
 @app.route("/", methods=["GET","POST"])
 def home():
 
     respuesta = ""
-    agente_actual = ""
 
     if request.method == "POST":
 
-        agente_actual = request.form["agente"]
+        agente = request.form["agente"]
         consulta = request.form["consulta"]
 
-        respuesta = f"""
-        <h3>Resultado del agente: {agente_actual}</h3>
-        <p>Consulta realizada:</p>
-        <div style='background:#f1f2f6;padding:15px;border-radius:8px'>
+        prompt = f"""
+        Actúa como un experto profesional en el área:
+        {agente}
+
+        Responde de manera técnica, clara y estructurada:
+
+        Consulta:
         {consulta}
-        </div>
-        <br>
-        <p>⚠️ Aquí luego aparecerá la respuesta generada por IA.</p>
         """
+
+        completion = client.chat.completions.create(
+            model="gpt-4.1-mini",
+            messages=[
+                {"role":"user","content":prompt}
+            ]
+        )
+
+        respuesta = completion.choices[0].message.content
 
     return f"""
     <html>
-    <head>
-    <title>Sistema IA FUNCREDES</title>
-    </head>
+    <body style="font-family:Arial">
 
-    <body style="margin:0;font-family:Arial">
+    <h1>Sistema Multi-Agente IA FUNCREDES</h1>
 
-    <div style="background:#0a3d62;color:white;padding:15px">
-    <h2>Sistema Empresarial Multi-Agente IA</h2>
-    </div>
+    <form method="post">
 
-    <div style="display:flex">
+    Seleccione agente:<br><br>
 
-        <div style="width:260px;background:#dfe6e9;padding:20px;height:100vh">
+    <select name="agente">
+    <option>Formulador de Proyectos</option>
+    <option>Ingeniero de Presupuestos</option>
+    <option>Buscador de Licitaciones</option>
+    <option>Abogado Institucional</option>
+    <option>Evaluador Financiero</option>
+    <option>Consultor Organizacional</option>
+    </select>
 
-        <h3>Agentes</h3>
+    <br><br>
 
-        <p>🤖 Formulador Proyectos</p>
-        <p>💰 Presupuestos</p>
-        <p>📑 Licitaciones</p>
-        <p>⚖️ Agente Legal</p>
-        <p>📊 Evaluación Financiera</p>
-        <p>📋 Diagnóstico</p>
+    Consulta:<br><br>
 
-        </div>
+    <textarea name="consulta" style="width:500px;height:150px"></textarea>
 
-        <div style="flex:1;padding:40px">
+    <br><br>
 
-        <h1>Panel de Consulta</h1>
+    <button>Consultar IA</button>
 
-        <form method="post">
+    </form>
 
-        Seleccione agente:<br><br>
+    <br><br>
 
-        <select name="agente" style="width:300px;height:35px">
-        <option>Formulador Proyectos</option>
-        <option>Presupuestos</option>
-        <option>Licitaciones</option>
-        <option>Agente Legal</option>
-        <option>Evaluación Financiera</option>
-        <option>Diagnóstico</option>
-        </select>
-
-        <br><br>
-
-        Escriba la consulta:<br><br>
-
-        <textarea name="consulta" style="width:500px;height:150px"></textarea>
-
-        <br><br>
-
-        <button style="padding:12px 25px;background:#0a3d62;color:white;border:0;border-radius:5px">
-        Ejecutar Agente
-        </button>
-
-        </form>
-
-        <br><br>
-
-        {respuesta}
-
-        </div>
-
+    <div style="background:#f1f2f6;padding:20px;border-radius:10px">
+    {respuesta}
     </div>
 
     </body>
