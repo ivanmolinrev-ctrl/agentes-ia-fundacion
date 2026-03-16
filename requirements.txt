@@ -1,8 +1,8 @@
 flask
-gunicorn
 openai
-pandas
-python-docx
 PyPDF2
+pandas
 openpyxl
 Pillow
+python-docx
+reportlab
