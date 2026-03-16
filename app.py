@@ -1,24 +1,30 @@
-from flask import Flask, request, render_template_string
+from flask import Flask, request, render_template_string, send_file
 import os
 from openai import OpenAI
+import PyPDF2
+import pandas as pd
 import base64
-from PIL import Image
+from docx import Document
+from reportlab.platypus import SimpleDocTemplate, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
+import io
+
 app = Flask(__name__)
 
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
+historial = []
+
 roles = {
 "formulador":"Eres experto en formulación de proyectos.",
-"presupuestos":"Eres ingeniero experto en presupuestos.",
+"presupuestos":"Eres ingeniero experto en presupuestos de obra.",
 "licitaciones":"Eres experto en contratación estatal.",
-"legal":"Eres abogado administrativo.",
-"financiero":"Eres experto financiero.",
+"legal":"Eres abogado administrativo colombiano.",
+"financiero":"Eres experto en evaluación financiera.",
 "diagnostico":"Eres consultor organizacional."
 }
 
-historial = []
-
-# ================= DASHBOARD BONITO =================
+# ================= DASHBOARD =================
 
 @app.route("/")
 def panel():
@@ -26,65 +32,27 @@ def panel():
 
 <html>
 <head>
-<title>Agentes de IA FUNCREDES </title>
-
+<title>FUNCREDES IA</title>
 <style>
 
-body{
-margin:0;
-font-family:Arial;
-background:#f1f4f9;
-}
+body{margin:0;font-family:Arial;background:#f1f4f9;}
 
-.sidebar{
-position:fixed;
-width:240px;
-height:100%;
-background:#0b2545;
-color:white;
-padding:20px;
-}
+.sidebar{position:fixed;width:240px;height:100%;background:#0b2545;color:white;padding:20px;}
 
-.logo{
-font-size:22px;
-font-weight:bold;
-margin-bottom:30px;
-}
+.logo{font-size:22px;font-weight:bold;margin-bottom:30px;}
 
-.content{
-margin-left:260px;
-padding:40px;
-}
+.content{margin-left:260px;padding:40px;}
 
-.cards{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
-gap:25px;
-}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:25px;}
 
-.card{
-background:white;
-padding:35px;
-border-radius:15px;
-box-shadow:0 6px 18px rgba(0,0,0,0.1);
-font-size:18px;
-font-weight:bold;
-cursor:pointer;
-transition:0.3s;
-text-align:center;
-}
+.card{background:white;padding:35px;border-radius:15px;box-shadow:0 6px 18px rgba(0,0,0,0.1);
+font-size:18px;font-weight:bold;cursor:pointer;text-align:center;transition:0.3s;}
 
-.card:hover{
-transform:translateY(-5px);
-}
+.card:hover{transform:translateY(-5px);}
 
-a{
-text-decoration:none;
-color:black;
-}
+a{text-decoration:none;color:black;}
 
 </style>
-
 </head>
 
 <body>
@@ -115,17 +83,14 @@ color:black;
 
 """)
 
-# ================= CHAT EXTREMO =================
-
-import PyPDF2
-import pandas as pd
+# ================= CHAT =================
 
 @app.route("/chat/<agente>", methods=["GET","POST"])
 def chat(agente):
 
     respuesta=""
-    texto_archivo=""
     imagen_base64=None
+    texto_docs=""
 
     if request.method=="POST":
 
@@ -134,10 +99,18 @@ def chat(agente):
 
         for archivo in archivos:
 
-            if archivo.filename.endswith((".jpg",".png",".jpeg")):
+            if archivo.filename.endswith(".pdf"):
+                lector = PyPDF2.PdfReader(archivo)
+                for p in lector.pages:
+                    texto_docs += p.extract_text() or ""
 
+            elif archivo.filename.endswith(".xlsx"):
+                df = pd.read_excel(archivo)
+                texto_docs += df.to_string()
+
+            elif archivo.filename.lower().endswith((".jpg",".jpeg",".png")):
                 imagen_bytes = archivo.read()
-                imagen_base64 = base64.b64encode(imagen_bytes).decode("utf-8")
+                imagen_base64 = base64.b64encode(imagen_bytes).decode()
 
         if imagen_base64:
 
@@ -146,7 +119,7 @@ def chat(agente):
                 messages=[
                     {"role":"system","content":roles[agente]},
                     {"role":"user","content":[
-                        {"type":"text","text":consulta},
+                        {"type":"text","text":consulta + texto_docs},
                         {"type":"image_url","image_url":{"url":f"data:image/jpeg;base64,{imagen_base64}"}}
                     ]}
                 ]
@@ -157,6 +130,9 @@ def chat(agente):
             prompt = roles[agente] + f"""
 Consulta:
 {consulta}
+
+Contenido documentos:
+{texto_docs}
 """
 
             completion = client.chat.completions.create(
@@ -165,88 +141,36 @@ Consulta:
             )
 
         respuesta = completion.choices[0].message.content
-
         historial.append((consulta,respuesta))
 
-    return render_template_string(TU_HTML_DE_CHAT, historial=historial, agente=agente.upper())
+    return render_template_string("""
+
 <html>
 <head>
 
 <style>
 
-body{
-margin:0;
-font-family:Arial;
-background:#0f172a;
-color:white;
-}
+body{margin:0;font-family:Arial;background:#0f172a;color:white;}
 
-.top{
-background:#020617;
-padding:15px;
-font-size:22px;
-font-weight:bold;
-}
+.top{background:#020617;padding:15px;font-size:22px;font-weight:bold;}
 
-.layout{
-display:flex;
-height:88vh;
-}
+.layout{display:flex;height:88vh;}
 
-.chat{
-flex:3;
-padding:20px;
-overflow:auto;
-}
+.chat{flex:3;padding:20px;overflow:auto;}
 
-.historial{
-flex:1;
-background:#020617;
-padding:15px;
-overflow:auto;
-}
+.historial{flex:1;background:#020617;padding:15px;overflow:auto;}
 
-.msg-user{
-background:#2563eb;
-padding:12px;
-border-radius:10px;
-margin:10px;
-text-align:right;
-}
+.msg-user{background:#2563eb;padding:12px;border-radius:10px;margin:10px;text-align:right;}
 
-.msg-ia{
-background:#1e293b;
-padding:12px;
-border-radius:10px;
-margin:10px;
-}
+.msg-ia{background:#1e293b;padding:12px;border-radius:10px;margin:10px;}
 
-.input{
-position:fixed;
-bottom:0;
-width:100%;
-background:#020617;
-padding:15px;
-}
+.input{position:fixed;bottom:0;width:100%;background:#020617;padding:15px;}
 
-textarea{
-width:60%;
-height:60px;
-border-radius:8px;
-}
+textarea{width:60%;height:60px;border-radius:8px;}
 
-button{
-padding:10px 25px;
-border-radius:8px;
-background:#2563eb;
-color:white;
-border:none;
-}
+button{padding:10px 25px;border-radius:8px;background:#2563eb;color:white;border:none;}
 
-.preview img{
-max-width:120px;
-margin:5px;
-}
+.preview img{max-width:120px;margin:5px;}
 
 </style>
 
@@ -303,9 +227,12 @@ Agente {{agente}}
 
 <textarea name="consulta"></textarea>
 
-<input type="file" id="files" multiple onchange="previewImages()">
+<input type="file" id="files" name="files" multiple onchange="previewImages()">
 
 <button>Enviar</button>
+
+<a href="/word"><button type="button">📄 Word</button></a>
+<a href="/pdf"><button type="button">📑 PDF</button></a>
 
 <div id="preview" class="preview"></div>
 
@@ -317,6 +244,32 @@ Agente {{agente}}
 </html>
 
 """, historial=historial, agente=agente.upper())
+
+# ================= WORD =================
+
+@app.route("/word")
+def word():
+    texto = historial[-1][1]
+    doc = Document()
+    doc.add_heading("Informe IA",0)
+    doc.add_paragraph(texto)
+    buffer = io.BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+    return send_file(buffer,as_attachment=True,download_name="informe.docx")
+
+# ================= PDF =================
+
+@app.route("/pdf")
+def pdf():
+    texto = historial[-1][1]
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer)
+    styles = getSampleStyleSheet()
+    story = [Paragraph(texto, styles["Normal"])]
+    doc.build(story)
+    buffer.seek(0)
+    return send_file(buffer,as_attachment=True,download_name="informe.pdf")
 
 if __name__ == "__main__":
     app.run()
