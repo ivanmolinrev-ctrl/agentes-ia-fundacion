@@ -7,178 +7,38 @@ app = Flask(__name__)
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 roles = {
-
-"formulador":
-"""
-Eres experto en formulación de proyectos en Colombia.
-Especialista MGA, PMI, estudios técnicos, sociales y financieros.
-""",
-
-"presupuestos":
-"""
-Eres ingeniero civil experto en APU, AIU, cronogramas y costos reales.
-""",
-
-"licitaciones":
-"""
-Eres experto en contratación estatal colombiana y SECOP.
-""",
-
-"legal":
-"""
-Eres abogado experto en derecho administrativo colombiano.
-Redactas derechos de petición, tutelas y respuestas institucionales.
-""",
-
-"financiero":
-"""
-Eres experto en VAN, TIR, flujo de caja y evaluación de proyectos.
-""",
-
-"diagnostico":
-"""
-Eres consultor en fortalecimiento organizacional e institucional.
-"""
+"formulador":"Eres experto en formulación de proyectos.",
+"presupuestos":"Eres ingeniero experto en presupuestos.",
+"licitaciones":"Eres experto en contratación estatal.",
+"legal":"Eres abogado administrativo.",
+"financiero":"Eres experto financiero.",
+"diagnostico":"Eres consultor organizacional."
 }
 
-# ================= DASHBOARD =================
+historial = []
 
 @app.route("/")
 def panel():
-    return render_template_string("""
+    return """
+    <h1 style='font-family:Arial'>Plataforma IA FUNCREDES</h1>
+    <a href='/chat/formulador'>Formulador</a><br>
+    <a href='/chat/presupuestos'>Presupuestos</a><br>
+    <a href='/chat/licitaciones'>Licitaciones</a><br>
+    <a href='/chat/legal'>Legal</a><br>
+    <a href='/chat/financiero'>Financiero</a><br>
+    <a href='/chat/diagnostico'>Diagnóstico</a>
+    """
 
-<html>
-<head>
-<title>Multi Agente IA Funcredes</title>
-
-<style>
-
-body{
-margin:0;
-font-family:Arial;
-background:#f1f4f9;
-}
-
-.sidebar{
-position:fixed;
-width:240px;
-height:100%;
-background:#0b2545;
-color:white;
-padding:20px;
-}
-
-.logo{
-font-size:22px;
-font-weight:bold;
-margin-bottom:30px;
-}
-
-.menu a{
-display:block;
-color:white;
-text-decoration:none;
-padding:12px;
-border-radius:8px;
-margin-bottom:10px;
-transition:0.3s;
-}
-
-.menu a:hover{
-background:#133c73;
-}
-
-.content{
-margin-left:260px;
-padding:40px;
-}
-
-.cards{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-gap:25px;
-}
-
-.card{
-background:white;
-padding:30px;
-border-radius:15px;
-box-shadow:0 6px 18px rgba(0,0,0,0.1);
-font-size:18px;
-font-weight:bold;
-cursor:pointer;
-transition:0.3s;
-text-align:center;
-}
-
-.card:hover{
-transform:translateY(-5px);
-}
-
-</style>
-
-</head>
-
-<body>
-
-<div class="sidebar">
-
-<div class="logo">FUNCREDES IA</div>
-
-<div class="menu">
-<a href="/">🏠 Inicio</a>
-<a href="/agente/formulador">🤖 Formulador</a>
-<a href="/agente/presupuestos">💰 Presupuestos</a>
-<a href="/agente/licitaciones">📑 Licitaciones</a>
-<a href="/agente/legal">⚖️ Legal</a>
-<a href="/agente/financiero">📊 Financiero</a>
-<a href="/agente/diagnostico">📋 Diagnóstico</a>
-</div>
-
-</div>
-
-<div class="content">
-
-<h1>Panel de Agentes Inteligentes</h1>
-
-<div class="cards">
-
-<a href="/agente/formulador"><div class="card">🤖 Formular Proyecto</div></a>
-<a href="/agente/presupuestos"><div class="card">💰 Presupuesto Obra</div></a>
-<a href="/agente/licitaciones"><div class="card">📑 Analizar Licitación</div></a>
-<a href="/agente/legal"><div class="card">⚖️ Consulta Legal</div></a>
-<a href="/agente/financiero"><div class="card">📊 Evaluación Financiera</div></a>
-<a href="/agente/diagnostico"><div class="card">📋 Diagnóstico</div></a>
-
-</div>
-
-</div>
-
-</body>
-</html>
-
-""")
-
-# ================= AGENTE =================
-
-@app.route("/agente/<tipo>", methods=["GET","POST"])
-def agente(tipo):
+@app.route("/chat/<agente>", methods=["GET","POST"])
+def chat(agente):
 
     respuesta=""
 
     if request.method=="POST":
 
         consulta=request.form["consulta"]
-        archivo=request.files.get("archivo")
-        info=archivo.filename if archivo else ""
 
-        prompt = roles[tipo] + f"""
-Consulta:
-{consulta}
-
-Archivo:
-{info}
-"""
+        prompt = roles[agente] + f"\nConsulta:{consulta}"
 
         completion = client.chat.completions.create(
             model="gpt-4.1-mini",
@@ -187,6 +47,8 @@ Archivo:
 
         respuesta = completion.choices[0].message.content
 
+        historial.append((consulta,respuesta))
+
     return render_template_string("""
 
 <html>
@@ -197,75 +59,145 @@ Archivo:
 body{
 margin:0;
 font-family:Arial;
-background:#f1f4f9;
+background:#0f172a;
+color:white;
 }
 
-.container{
-width:80%;
-margin:auto;
-margin-top:40px;
-background:white;
-padding:30px;
-border-radius:15px;
-box-shadow:0 6px 18px rgba(0,0,0,0.1);
+.top{
+background:#020617;
+padding:15px;
+font-size:22px;
+font-weight:bold;
+}
+
+.layout{
+display:flex;
+height:90vh;
+}
+
+.chat{
+flex:3;
+padding:20px;
+overflow:auto;
+}
+
+.historial{
+flex:1;
+background:#020617;
+padding:15px;
+overflow:auto;
+}
+
+.msg-user{
+background:#2563eb;
+padding:12px;
+border-radius:10px;
+margin:10px;
+text-align:right;
+}
+
+.msg-ia{
+background:#1e293b;
+padding:12px;
+border-radius:10px;
+margin:10px;
+}
+
+.input{
+position:fixed;
+bottom:0;
+width:75%;
+background:#020617;
+padding:15px;
 }
 
 textarea{
-width:100%;
-height:160px;
-border-radius:10px;
-padding:10px;
-border:1px solid #ccc;
+width:70%;
+height:60px;
+border-radius:8px;
 }
 
 button{
-background:#0b2545;
-color:white;
-padding:12px 30px;
-border:none;
+padding:10px 25px;
 border-radius:8px;
-font-size:16px;
-cursor:pointer;
+background:#2563eb;
+color:white;
+border:none;
 }
 
-.result{
-margin-top:25px;
-background:#f4f6fb;
-padding:20px;
-border-radius:10px;
-white-space:pre-wrap;
+.preview img{
+max-width:120px;
+margin:5px;
 }
 
 </style>
+
+<script>
+
+function previewImages(){
+let preview=document.getElementById('preview')
+preview.innerHTML=""
+let files=document.getElementById('files').files
+
+for(let i=0;i<files.length;i++){
+let reader=new FileReader()
+reader.onload=function(e){
+preview.innerHTML+="<img src='"+e.target.result+"'>"
+}
+reader.readAsDataURL(files[i])
+}
+}
+
+</script>
 
 </head>
 
 <body>
 
-<div class="container">
+<div class="top">
+FUNCREDES IA — Agente {{agente}}
+</div>
 
-<h2>Agente {{tipo}}</h2>
+<div class="layout">
+
+<div class="chat">
+
+{% for c,r in historial %}
+<div class="msg-user">{{c}}</div>
+<div class="msg-ia">{{r}}</div>
+{% endfor %}
+
+</div>
+
+<div class="historial">
+<h3>Historial</h3>
+{% for c,r in historial %}
+<p>Consulta</p>
+{% endfor %}
+</div>
+
+</div>
+
+<div class="input">
 
 <form method="post" enctype="multipart/form-data">
 
-<textarea name="consulta"></textarea><br><br>
-<input type="file" name="archivo"><br><br>
+<textarea name="consulta"></textarea>
 
-<button>Consultar IA</button>
+<input type="file" id="files" multiple onchange="previewImages()">
+
+<button>Enviar</button>
+
+<div id="preview" class="preview"></div>
 
 </form>
-
-<div class="result">{{respuesta}}</div>
-
-<br>
-<a href="/">⬅ Volver</a>
 
 </div>
 
 </body>
 </html>
 
-""", tipo=tipo.upper(), respuesta=respuesta)
+""", historial=historial, agente=agente.upper())
 
 if __name__ == "__main__":
     app.run()
