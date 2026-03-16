@@ -1,7 +1,8 @@
 from flask import Flask, request, render_template_string
 import os
 from openai import OpenAI
-
+import base64
+from PIL import Image
 app = Flask(__name__)
 
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
@@ -124,48 +125,50 @@ def chat(agente):
 
     respuesta=""
     texto_archivo=""
+    imagen_base64=None
 
     if request.method=="POST":
 
         consulta=request.form["consulta"]
-
         archivos = request.files.getlist("files")
 
         for archivo in archivos:
 
-            if archivo.filename.endswith(".pdf"):
+            if archivo.filename.endswith((".jpg",".png",".jpeg")):
 
-                lector = PyPDF2.PdfReader(archivo)
-                for pagina in lector.pages:
-                    texto_archivo += pagina.extract_text()
+                imagen_bytes = archivo.read()
+                imagen_base64 = base64.b64encode(imagen_bytes).decode("utf-8")
 
-            elif archivo.filename.endswith(".xlsx"):
+        if imagen_base64:
 
-                df = pd.read_excel(archivo)
-                texto_archivo += df.to_string()
+            completion = client.chat.completions.create(
+                model="gpt-4.1-mini",
+                messages=[
+                    {"role":"system","content":roles[agente]},
+                    {"role":"user","content":[
+                        {"type":"text","text":consulta},
+                        {"type":"image_url","image_url":{"url":f"data:image/jpeg;base64,{imagen_base64}"}}
+                    ]}
+                ]
+            )
 
-        prompt = roles[agente] + f"""
+        else:
 
+            prompt = roles[agente] + f"""
 Consulta:
 {consulta}
-
-Contenido del documento:
-{texto_archivo}
-
-Analiza profesionalmente el documento.
 """
 
-        completion = client.chat.completions.create(
-            model="gpt-4.1-mini",
-            messages=[{"role":"user","content":prompt}]
-        )
+            completion = client.chat.completions.create(
+                model="gpt-4.1-mini",
+                messages=[{"role":"user","content":prompt}]
+            )
 
         respuesta = completion.choices[0].message.content
 
         historial.append((consulta,respuesta))
 
     return render_template_string(TU_HTML_DE_CHAT, historial=historial, agente=agente.upper())
-
 <html>
 <head>
 
